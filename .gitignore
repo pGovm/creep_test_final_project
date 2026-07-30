@@ -1,2 +1,4 @@
 .venv/
-creep_data/*
+__pycache__/*
+creep_data/*_data
+creep_data/03_metadata

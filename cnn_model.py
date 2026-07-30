@@ -15,10 +15,10 @@ MODEL_CLASSES = {
     "CNN": elongationCNN
 }
 
-# Paths that we will use
+# Paths that we will use, you will have to change the architecture to
 BASE_DIR = Path(__file__).parent / "creep_data"
 processed_data_folder = BASE_DIR / "processed_data"
-results_folder = BASE_DIR / "results"
+results_folder = BASE_DIR / "results" / "CNN"
 
 # Hyperparams that are common throughout all the models
 seed = 42
