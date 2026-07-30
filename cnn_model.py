@@ -12,7 +12,7 @@ from training_testing_functions import train_model, test_model, plot_loss, compu
 
 # Change this to the model you are training
 MODEL_CLASSES = {
-    "LSTM": elongationLSTM
+    "CNN": elongationCNN
 }
 
 # Paths that we will use
