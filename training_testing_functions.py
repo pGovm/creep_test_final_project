@@ -207,7 +207,7 @@ def test_model(model, test_loader, test_case_ids=None, device="cpu"):
 # PLOTTING
 
 
-def plot_loss(history):
+def plot_loss(history, save_path=None):
    
     train_loss = history["train_loss"]
     val_loss = history["val_loss"]
@@ -223,49 +223,43 @@ def plot_loss(history):
     plt.legend()
     plt.grid(True)
     plt.tight_layout()
+    if save_path:
+        plt.savefig(save_path)
     plt.show()
+    plt.close()
 
 
 
 # METRICS
 
 
-def compute_metrics(preds, targets, scaler=None, print_results=True):
-    
+def compute_metrics(preds, targets, scaler=None, features_to_scale=None, target_col="Elongation", print_results=True):
 
-    # Convert PyTorch tensors to NumPy arrays
     if isinstance(preds, torch.Tensor):
         preds = preds.detach().cpu().numpy()
-
     if isinstance(targets, torch.Tensor):
         targets = targets.detach().cpu().numpy()
 
-    # Make sure the arrays have shape (number_of_samples, 1)
-    preds = np.asarray(preds).reshape(-1, 1)
-    targets = np.asarray(targets).reshape(-1, 1)
+    preds = np.asarray(preds).reshape(-1)
+    targets = np.asarray(targets).reshape(-1)
 
-    # Convert scaled values back to the original units
     if scaler is not None:
-        preds_original = scaler.inverse_transform(preds)
-        targets_original = scaler.inverse_transform(targets)
+        if features_to_scale is None:
+            raise ValueError("features_to_scale is required to inverse-transform with the scaler.")
+        target_index = features_to_scale.index(target_col)
+        mean = scaler.mean_[target_index]
+        scale = scaler.scale_[target_index]
+        preds_original = preds * scale + mean
+        targets_original = targets * scale + mean
     else:
         preds_original = preds
         targets_original = targets
 
-    # Change shape from (N, 1) to (N,)
-    preds_flat = preds_original.ravel()
-    targets_flat = targets_original.ravel()
+    mae = mean_absolute_error(targets_original, preds_original)
+    rmse = np.sqrt(mean_squared_error(targets_original, preds_original))
+    r2 = r2_score(targets_original, preds_original)
 
-    # Calculate regression metrics
-    mae = mean_absolute_error(targets_flat, preds_flat)
-    rmse = np.sqrt(mean_squared_error(targets_flat, preds_flat))
-    r2 = r2_score(targets_flat, preds_flat)
-
-    metrics = {
-        "MAE": mae,
-        "RMSE": rmse,
-        "R2": r2,
-    }
+    metrics = {"MAE": mae, "RMSE": rmse, "R2": r2}
 
     if print_results:
         print(f"MAE:  {mae:.4f}")
