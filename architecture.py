@@ -46,7 +46,7 @@ class elongationCNN(nn.Module):
     def forward(self, x):
         x = x.permute(0, 2, 1) # (batch_len, seq_len, input_size) --> (batch_len, input_size, seq_len)
         x = self.conv(x) # (batch_len, num_filters, seq_len)
-        self.pool(x).squeeze(-1) # (batch_len, num_filters, 1) --> (batch_len, num_filters)
+        x = self.pool(x).squeeze(-1) # (batch_len, num_filters, 1) --> (batch_len, num_filters)
 
         return self.fc(x)
 
