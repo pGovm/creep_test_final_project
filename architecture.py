@@ -125,7 +125,7 @@ MODEL_CLASSES = {
     "RNN": elongationRNN,
     "LSTM": elongationLSTM,
     "GRU": elongationGRU,
-    "Trasnformer": elongationTransformer,
+    "Transformer": elongationTransformer,
 }
 
 def get_model(name, input_size, seq_len=None, **overrides):
