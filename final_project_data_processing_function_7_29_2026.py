@@ -24,6 +24,8 @@ import matplotlib.pyplot as plt
 import datetime
 import os
 
+import joblib
+
 import time
 from pathlib import Path
 
@@ -800,6 +802,8 @@ def save_processed_data(
     sequence_data,
     sequence_case_ids,
     label_splits,
+    scaler,
+    features_to_scale,
     output_folder
 ):
     output_folder.mkdir(
@@ -827,6 +831,10 @@ def save_processed_data(
             output_folder / f"{name}.csv",
             index=False
         )
+
+    joblib.dump(scaler, output_folder / "scaler.joblib")
+
+    joblib.dump(features_to_scale, output_folder / "features_to_scale.joblib")
 
     print(
         f"\nProcessed data saved to: "
@@ -934,6 +942,8 @@ def preprocess_data():
         sequence_data,
         sequence_case_ids,
         label_splits,
+        scaler,
+        features_to_scale,
         processed_data_folder
     )
 
