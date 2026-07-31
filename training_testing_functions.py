@@ -10,6 +10,7 @@ Original file is located at
 import copy
 import torch
 import torch.nn as nn
+import numpy as np
 
 # TRAINING
 
