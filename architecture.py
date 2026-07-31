@@ -24,7 +24,7 @@ import torch
 import torch.nn as nn
 
 class elongationCNN(nn.Module):
-    def __init__(self, input_size, num_filters=32, kernel_size=3, num_conv_layers=2, fc_hidden=None):
+    def __init__(self, input_size, num_filters=32, kernel_size=3, num_conv_layers=2, fc_hidden=None, dropout=0.2):
         super().__init__()
 
         layers = []
@@ -36,6 +36,7 @@ class elongationCNN(nn.Module):
             in_channels = num_filters
 
         self.conv = nn.Sequential(*layers)
+        self.dropout = nn.Dropout(dropout)
         self.pool = nn.AdaptiveAvgPool1d(1)
 
         if fc_hidden:
@@ -47,14 +48,16 @@ class elongationCNN(nn.Module):
         x = x.permute(0, 2, 1) # (batch_len, seq_len, input_size) --> (batch_len, input_size, seq_len)
         x = self.conv(x) # (batch_len, num_filters, seq_len)
         x = self.pool(x).squeeze(-1) # (batch_len, num_filters, 1) --> (batch_len, num_filters)
+        x = self.dropout(x)
 
         return self.fc(x)
 
 class elongationRNN(nn.Module):
-    def __init__(self, input_size, hid_size=32, num_layers=1, fc_hidden=None):
+    def __init__(self, input_size, hid_size=32, num_layers=1, fc_hidden=None, dropout=0.2):
         super().__init__()
 
         self.rnn = nn.RNN(input_size, hid_size, num_layers=num_layers, batch_first=True)
+        self.dropout = nn.Dropout(dropout)
 
         if fc_hidden:
             self.fc = nn.Sequential(nn.Linear(hid_size, fc_hidden), nn.ReLU(), nn.Linear(fc_hidden, 1))
@@ -64,14 +67,16 @@ class elongationRNN(nn.Module):
     def forward(self, x):
         output, _ = self.rnn(x)
         last_step = output[:, -1, :]
+        last_step = self.dropout(last_step)
 
         return self.fc(last_step)
 
 class elongationLSTM(nn.Module):
-    def __init__(self, input_size, hid_size=32, num_layers=1, fc_hidden=None):
+    def __init__(self, input_size, hid_size=32, num_layers=1, fc_hidden=None, dropout=0.2):
         super().__init__()
 
         self.lstm = nn.LSTM(input_size, hid_size, num_layers=num_layers, batch_first=True)
+        self.dropout = nn.Dropout(dropout)
 
         if fc_hidden:
             self.fc = nn.Sequential(nn.Linear(hid_size, fc_hidden), nn.ReLU(), nn.Linear(fc_hidden, 1))
@@ -81,14 +86,16 @@ class elongationLSTM(nn.Module):
     def forward(self, x):
         output, _ = self.lstm(x)
         last_step = output[:, -1, :]
+        last_step  = self.dropout(last_step)
 
         return self.fc(last_step)
 
 class elongationGRU(nn.Module):
-    def __init__(self, input_size, hid_size=32, num_layers=1, fc_hidden=None):
+    def __init__(self, input_size, hid_size=32, num_layers=1, fc_hidden=None, dropout=0.2):
         super().__init__()
 
         self.gru = nn.GRU(input_size, hid_size, num_layers=num_layers, batch_first=True)
+        self.dropout = nn.Dropout(dropout)
 
         if fc_hidden:
             self.fc = nn.Sequential(nn.Linear(hid_size, fc_hidden), nn.ReLU(), nn.Linear(fc_hidden, 1))
@@ -98,11 +105,12 @@ class elongationGRU(nn.Module):
     def forward(self, x):
         output, _ = self.gru(x)
         last_step = output[:, -1, :]
+        last_step = self.dropout(last_step)
 
         return self.fc(last_step)
 
 class elongationTransformer(nn.Module):
-    def __init__(self, input_size, seq_len, embed_dim=16, num_heads=2, num_layers=1, ff_dim=64, dropout=0.1):
+    def __init__(self, input_size, seq_len, embed_dim=16, num_heads=2, num_layers=1, ff_dim=64, dropout=0.2):
         super().__init__()
 
         self.input_proj = nn.Linear(input_size, embed_dim)

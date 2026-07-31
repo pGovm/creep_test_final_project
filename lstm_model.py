@@ -25,7 +25,7 @@ seed = 42
 epochs = 100
 learning_rate = 0.001
 batch_size = 32
-early_stopping = 10
+early_stopping = 5
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 torch.manual_seed(seed)
