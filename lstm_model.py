@@ -18,7 +18,7 @@ MODEL_CLASSES = {
 # Paths that we will use
 BASE_DIR = Path(__file__).parent / "creep_data"
 processed_data_folder = BASE_DIR / "processed_data"
-results_folder = BASE_DIR / "results"
+results_folder = BASE_DIR / "results" / "LSTM"
 
 # Hyperparams that are common throughout all the models
 seed = 42
