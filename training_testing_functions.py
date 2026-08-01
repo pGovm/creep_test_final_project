@@ -11,7 +11,8 @@ import copy
 import torch
 import torch.nn as nn
 import numpy as np
-
+from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
+import matplotlib.pyplot as plt
 # TRAINING
 
 
@@ -24,6 +25,8 @@ def train_model(
     device=torch.device("cuda" if torch.cuda.is_available() else "cpu"),
     early_stopping_patience=10,
     verbose=True,
+    grad_clip_norm=1.0,
+    use_lr_scheduler=True,
 ):
     """
     Trains the model and checks its validation loss after each epoch.
@@ -41,7 +44,15 @@ def train_model(
     criterion = nn.MSELoss()
 
     # Adam updates the model weights
-    optimizer = torch.optim.Adam(model.parameters(), lr=lr)
+    optimizer = torch.optim.Adam(model.parameters(), lr=lr, weight_decay=1e-4)
+
+    # Reduce the learning rate when validation loss plateaus, so the
+    # optimizer stops overshooting once it's near a minimum
+    scheduler = None
+    if use_lr_scheduler:
+        scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
+            optimizer, mode="min", factor=0.5, patience=5
+        )
 
     # Store loss values for plotting later
     history = {"train_loss": [], "val_loss": []}
@@ -73,6 +84,13 @@ def train_model(
             # Calculate gradients
             loss.backward()
 
+            # Clip gradients so a single bad batch can't spike the
+            # weights (mainly matters for the RNN-family models)
+            if grad_clip_norm is not None:
+                torch.nn.utils.clip_grad_norm_(
+                    model.parameters(), max_norm=grad_clip_norm
+                )
+
             # Update model weights
             optimizer.step()
 
@@ -88,6 +106,14 @@ def train_model(
         # Save loss values
         history["train_loss"].append(train_loss)
         history["val_loss"].append(val_loss)
+
+        # Lower the learning rate if validation loss has stopped improving
+        if scheduler is not None:
+            prev_lr = optimizer.param_groups[0]["lr"]
+            scheduler.step(val_loss)
+            new_lr = optimizer.param_groups[0]["lr"]
+            if verbose and new_lr < prev_lr:
+                print(f"  Learning rate reduced: {prev_lr:.6f} -> {new_lr:.6f}")
 
         # Print progress
         if verbose:
@@ -146,6 +172,56 @@ def evaluate_loss(model, loader, criterion, device="cpu"):
     # Return the average loss for all samples
     return running_loss / len(loader.dataset)
 
+
+def evaluate_loss_by_case(model, X_val, y_val, val_case_ids, device="cpu", batch_size=256):
+    """
+    Breaks validation MSE down per Case_ID so you can see whether one
+    specimen (e.g. one close to its failure knee) is driving loss spikes,
+    rather than the model generally struggling.
+
+    X_val, y_val: full validation tensors (not a DataLoader) so windows
+        stay aligned with val_case_ids.
+    val_case_ids: list/array of Case_ID strings, same length and order
+        as X_val (this is exactly sequence_case_ids["val_sequence_case_ids"]
+        from create_all_sequences).
+
+    Returns a dict: {case_id: {"mse": ..., "n_windows": ...}}, sorted
+    worst-to-best.
+    """
+    model.to(device)
+    model.eval()
+
+    val_case_ids = np.asarray(val_case_ids)
+    per_window_sq_error = []
+
+    with torch.no_grad():
+        for start in range(0, len(X_val), batch_size):
+            X_batch = X_val[start:start + batch_size].to(device)
+            y_batch = y_val[start:start + batch_size].to(device)
+            preds = model(X_batch)
+            sq_error = ((preds - y_batch) ** 2).squeeze(-1).cpu().numpy()
+            per_window_sq_error.append(sq_error)
+
+    per_window_sq_error = np.concatenate(per_window_sq_error)
+
+    results = {}
+    for case_id in np.unique(val_case_ids):
+        mask = val_case_ids == case_id
+        results[case_id] = {
+            "mse": float(per_window_sq_error[mask].mean()),
+            "n_windows": int(mask.sum()),
+        }
+
+    # Sort worst (highest MSE) first
+    results = dict(
+        sorted(results.items(), key=lambda item: item[1]["mse"], reverse=True)
+    )
+
+    print("\nValidation MSE by case (worst first):")
+    for case_id, stats in results.items():
+        print(f"  {case_id}: MSE={stats['mse']:.4f}  (n={stats['n_windows']})")
+
+    return results
 
 
 # TESTING
