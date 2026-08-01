@@ -1,0 +1,2 @@
+model,rmse_mm,mae_mm,R2,num_params,epochs_trained
+Transformer,0.26826156144522567,0.2311937387157427,0.8128298812539071,3521,16
