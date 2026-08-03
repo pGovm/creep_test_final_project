@@ -1,0 +1,2 @@
+model,rmse_mm,mae_mm,R2,num_params,epochs_trained
+GRU,0.3282981769381678,0.2286663559643548,0.7196784009978248,3585,41
