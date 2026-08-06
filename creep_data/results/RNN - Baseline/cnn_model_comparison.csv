@@ -1,0 +1,2 @@
+model,rmse_mm,mae_mm,R2,num_params,epochs_trained
+RNN,0.2475828794914449,0.179300284678246,0.8405733799160537,1217,20
