@@ -1,0 +1,1 @@
+Baseline and Dropout + Weight Decay results can be found in commit history
