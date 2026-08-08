@@ -9,6 +9,7 @@ This project was to take the above dataset and train it on 5 different architect
 - final_project_data_preprocessing_function_7_29_2026.py: This python script handles the data preprocessing of the dataset
 - architecture.py: This file contains the architecture of all 5 models as well as the hyperparameters used for each of them.
 - training-testing-function: This file handles the training of all 5 models and runs evaluations on them using the Root Mean Squared Error, Mean Absolute Error, and Coefficient of Determination.
+
 The remaining scripts are main functions calling each individual architecture for training and testing on the dataset. Finally, the creep_data folder contains the results of all the trained models in the form of:
 - Training and Validation loss curves
 - A CSV file that saves the evaluation results of all the models
